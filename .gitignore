@@ -1,0 +1,58 @@
+# ==========================================
+# Souhail HAFIDI — Portfolio .gitignore
+# ==========================================
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor & IDE Directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+*.bak
+
+# Environment & Secret Files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Portfolio Admin Backups & Exports
+portfolio-content*.json
+backup-*.json
+
+# Dependency Directories
+node_modules/
+jspm_packages/
+
+# Build & Cache Directories
+.cache/
+dist/
+build/
+.next/
+.out/
+
+# Temporary / Scratch Files
+scratch/
+tmp/
+temp/

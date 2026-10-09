@@ -1,0 +1,9 @@
+.git
+.gitignore
+.dockerignore
+README.md
+setup_repo.sh
+setup_repo.ps1
+portfolio-content*.json
+.DS_Store
+Thumbs.db

@@ -61,9 +61,10 @@
   }
   </script>
 
-  <!-- Supabase JS Client CDN, Translations & Main Application Script -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="translations.js" defer></script>
+  <!-- Internationalization (i18n) Dictionary (Loaded first to ensure synchronous availability) -->
+  <script src="translations.js"></script>
+  <!-- Supabase JS Client CDN & Main Application Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -1304,9 +1305,6 @@
         <div class="admin-form-group">
           <label for="admin-password" class="admin-form-label">Password</label>
           <input type="password" id="admin-password" class="admin-form-input" placeholder="••••••••" required autocomplete="current-password">
-        </div>
-        <div class="admin-demo-hint">
-          <span>💡 <strong>Demo Credentials:</strong> Username: <code>DrSouHou</code> | Password: <code>admin</code></span>
         </div>
         <div id="login-error-msg" class="admin-error-msg hidden" role="alert"></div>
         <div class="admin-modal-actions">

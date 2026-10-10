@@ -4,7 +4,7 @@
  * Features:
  * - Persistent Cloud Data Layer via Supabase (@supabase/supabase-js)
  * - Live on-page content editing (contenteditable)
- * - Super User Admin authentication (DrSouHou / admin)
+ * - Super User Admin authentication
  * - Dynamic project card rendering, filtering, adding, editing, deleting synced with Supabase
  * - JSON data export & backup
  * - Reset to defaults in Supabase cloud
@@ -505,9 +505,15 @@ document.addEventListener('DOMContentLoaded', () => {
      ========================================================================== */
   let currentLang = 'en';
   try {
-    const saved = localStorage.getItem('portfolio_lang');
-    if (saved === 'fr' || saved === 'en') {
-      currentLang = saved;
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLang = urlParams.get('lang');
+    if (urlLang === 'fr' || urlLang === 'en') {
+      currentLang = urlLang;
+    } else {
+      const saved = localStorage.getItem('portfolio_lang');
+      if (saved === 'fr' || saved === 'en') {
+        currentLang = saved;
+      }
     }
   } catch (e) {
     currentLang = 'en';
@@ -569,6 +575,10 @@ document.addEventListener('DOMContentLoaded', () => {
       renderProjects(portfolioData.projects);
     }
   }
+
+  // Expose internationally for global script access / external links
+  window.setLanguage = setLanguage;
+  window.getCurrentLanguage = getCurrentLanguage;
 
   function initLanguageSwitcher() {
     ['lang-btn-en', 'mobile-lang-btn-en'].forEach(id => {
@@ -940,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Super User CMS unlocked! Live edit mode active.', '⚡');
       } else {
         if (loginErrorMsg) {
-          loginErrorMsg.textContent = 'Invalid credentials. Demo: DrSouHou / admin';
+          loginErrorMsg.textContent = 'Invalid username or password. Please try again.';
           loginErrorMsg.classList.remove('hidden');
         }
       }

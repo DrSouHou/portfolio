@@ -28,7 +28,7 @@ Bridging the precision requirements of healthcare engineering with full-stack so
 | **Frontend Foundation** | Clean, semantic HTML5 structure with zero third-party framework overhead, accessible ARIA roles, and high-contrast typography. |
 | **Design System** | Tailored color system (crisp slate-50 base, pure white surface cards, vibrant electric cyan/deep blue accents), smooth micro-interactions, and glassmorphism. |
 | **Dynamic Data Engine** | Full client-side JavaScript data model with **Supabase cloud storage** persistence, dynamic DOM hydration, and real-time project filtering with animated reflows. |
-| **In-Browser Super User CMS** | Built-in authentication gate (`DrSouHou` / `admin`), live `contenteditable` inline editing with dashed outline visual feedback, and real-time card CRUD. |
+| **In-Browser Super User CMS** | Built-in administrative authentication gate, live `contenteditable` inline editing with dashed outline visual feedback, and real-time card CRUD. |
 | **Profile Photo Customizer** | Real-time image upload (base64 `FileReader`) or remote URL input with a circular preview frame and one-click default reset. |
 | **State Persistence & Backup** | One-click JSON data export (`portfolio-content.json`) to create permanent backups or migrate to external databases. |
 | **Containerization** | Production-ready Alpine Nginx image with Gzip compression and security headers with a **~25MB footprint**. |
@@ -67,8 +67,7 @@ The portfolio includes an integrated client-side Content Management System:
    - Click the discrete **"Admin Portal"** link in the footer, or
    - Press the global keyboard shortcut: `Ctrl + Shift + A` (or `Cmd + Shift + A` on macOS).
 2. **Authentication:**
-   - **Username:** `DrSouHou`
-   - **Password:** `admin`
+   - Authenticate with authorized administrator credentials to unlock the CMS.
 3. **Live Features:**
    - ✏️ **Inline Text Editing:** Click any headline, role, or narrative to edit text directly.
    - 📷 **Change Profile Picture:** Upload a new local file or input an image URL with live circular preview.

@@ -27,7 +27,7 @@ Bridging the precision requirements of healthcare engineering with full-stack so
 | :--- | :--- |
 | **Frontend Foundation** | Clean, semantic HTML5 structure with zero third-party framework overhead, accessible ARIA roles, and high-contrast typography. |
 | **Design System** | Tailored color system (crisp slate-50 base, pure white surface cards, vibrant electric cyan/deep blue accents), smooth micro-interactions, and glassmorphism. |
-| **Dynamic Data Engine** | Full client-side JavaScript data model with `localStorage` persistence, dynamic DOM hydration, and real-time project filtering with animated reflows. |
+| **Dynamic Data Engine** | Full client-side JavaScript data model with **Supabase cloud storage** persistence, dynamic DOM hydration, and real-time project filtering with animated reflows. |
 | **In-Browser Super User CMS** | Built-in authentication gate (`DrSouHou` / `admin`), live `contenteditable` inline editing with dashed outline visual feedback, and real-time card CRUD. |
 | **Profile Photo Customizer** | Real-time image upload (base64 `FileReader`) or remote URL input with a circular preview frame and one-click default reset. |
 | **State Persistence & Backup** | One-click JSON data export (`portfolio-content.json`) to create permanent backups or migrate to external databases. |
@@ -73,7 +73,7 @@ The portfolio includes an integrated client-side Content Management System:
    - ✏️ **Inline Text Editing:** Click any headline, role, or narrative to edit text directly.
    - 📷 **Change Profile Picture:** Upload a new local file or input an image URL with live circular preview.
    - ➕ **Add & Edit Projects:** Add new engineering records or edit existing ones via structured modal forms.
-   - 💾 **Save Changes:** Persists live edits directly into `localStorage`.
+   - 💾 **Save Changes:** Persists live edits directly into Supabase cloud storage with automatic local caching.
    - 📥 **Export JSON:** Downloads `portfolio-content.json` containing the entire content state.
    - 🔄 **Reset to Defaults:** Restores original hardcoded data at any time.
 

@@ -60,6 +60,11 @@
     ]
   }
   </script>
+
+  <!-- Supabase JS Client CDN, Translations & Main Application Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="translations.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
   <!-- Ambient Glow & Grid Canvas Elements -->
@@ -86,7 +91,7 @@
           <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           <span>Photo</span>
         </button>
-        <button type="button" class="btn-admin-action btn-admin-save" id="admin-save-btn" title="Save on-page text and project changes to localStorage">
+        <button type="button" class="btn-admin-action btn-admin-save" id="admin-save-btn" title="Save on-page text and project changes to Supabase cloud storage">
           <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
           <span>Save Changes</span>
         </button>
@@ -117,16 +122,23 @@
       <!-- Desktop Navigation Menu -->
       <nav class="desktop-nav" aria-label="Main Navigation">
         <ul class="nav-links">
-          <li><a href="#about" class="nav-link" data-section="about">About</a></li>
-          <li><a href="#background" class="nav-link" data-section="background">Background</a></li>
-          <li><a href="#skills" class="nav-link" data-section="skills">Skills</a></li>
-          <li><a href="#projects" class="nav-link" data-section="projects">Projects</a></li>
-          <li><a href="#experience" class="nav-link" data-section="experience">Leadership</a></li>
-          <li><a href="#contact" class="nav-link" data-section="contact">Contact</a></li>
+          <li><a href="#about" class="nav-link" data-section="about" data-i18n="nav.about">About</a></li>
+          <li><a href="#background" class="nav-link" data-section="background" data-i18n="nav.background">Background</a></li>
+          <li><a href="#skills" class="nav-link" data-section="skills" data-i18n="nav.skills">Skills</a></li>
+          <li><a href="#projects" class="nav-link" data-section="projects" data-i18n="nav.projects">Projects</a></li>
+          <li><a href="#experience" class="nav-link" data-section="experience" data-i18n="nav.experience">Leadership</a></li>
+          <li><a href="#contact" class="nav-link" data-section="contact" data-i18n="nav.contact">Contact</a></li>
         </ul>
       </nav>
 
       <div class="header-actions">
+        <!-- Language Switcher (Desktop) -->
+        <div class="lang-switcher" id="lang-switcher" role="group" aria-label="Language selector">
+          <button type="button" class="lang-btn active" data-lang="en" id="lang-btn-en" aria-pressed="true" aria-label="Switch to English">EN</button>
+          <span class="lang-divider" aria-hidden="true">/</span>
+          <button type="button" class="lang-btn" data-lang="fr" id="lang-btn-fr" aria-pressed="false" aria-label="Passer au français">FR</button>
+        </div>
+
         <!-- Download CV Header Button -->
         <a href="assets/docs/Souhail_HAFIDI_CV.pdf" download="Souhail_HAFIDI_CV.pdf" class="btn btn-sm btn-outline nav-cta btn-cv" id="resume-nav-btn" target="_blank" rel="noopener noreferrer">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -134,7 +146,7 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Download CV</span>
+          <span data-i18n="nav.downloadCv">Download CV</span>
         </a>
 
         <!-- Mobile Navigation Hamburger Button -->
@@ -151,6 +163,11 @@
       <div class="mobile-drawer-inner">
         <div class="mobile-drawer-header">
           <span class="logo-mark">SH<span class="dot">.</span></span>
+          <div class="lang-switcher mobile-lang-switcher" id="mobile-lang-switcher" role="group" aria-label="Language selector">
+            <button type="button" class="lang-btn active" data-lang="en" id="mobile-lang-btn-en" aria-pressed="true" aria-label="Switch to English">EN</button>
+            <span class="lang-divider" aria-hidden="true">/</span>
+            <button type="button" class="lang-btn" data-lang="fr" id="mobile-lang-btn-fr" aria-pressed="false" aria-label="Passer au français">FR</button>
+          </div>
           <button type="button" class="mobile-close-btn" id="mobile-close" aria-label="Close menu">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -159,12 +176,12 @@
           </button>
         </div>
         <ul class="mobile-nav-links">
-          <li><a href="#about" class="mobile-nav-link">About</a></li>
-          <li><a href="#background" class="mobile-nav-link">Multidisciplinary Edge</a></li>
-          <li><a href="#skills" class="mobile-nav-link">Technical Skills</a></li>
-          <li><a href="#projects" class="mobile-nav-link">Featured Projects</a></li>
-          <li><a href="#experience" class="mobile-nav-link">Leadership & Experience</a></li>
-          <li><a href="#contact" class="mobile-nav-link">Contact</a></li>
+          <li><a href="#about" class="mobile-nav-link" data-i18n="nav.mobileAbout">About</a></li>
+          <li><a href="#background" class="mobile-nav-link" data-i18n="nav.mobileBackground">Multidisciplinary Edge</a></li>
+          <li><a href="#skills" class="mobile-nav-link" data-i18n="nav.mobileSkills">Technical Skills</a></li>
+          <li><a href="#projects" class="mobile-nav-link" data-i18n="nav.mobileProjects">Featured Projects</a></li>
+          <li><a href="#experience" class="mobile-nav-link" data-i18n="nav.mobileExperience">Leadership & Experience</a></li>
+          <li><a href="#contact" class="mobile-nav-link" data-i18n="nav.mobileContact">Contact</a></li>
         </ul>
         <div class="mobile-drawer-footer">
           <a href="assets/docs/Souhail_HAFIDI_CV.pdf" download="Souhail_HAFIDI_CV.pdf" class="btn btn-primary btn-block btn-cv mobile-drawer-cta" target="_blank" rel="noopener noreferrer">
@@ -173,9 +190,9 @@
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            <span>Download CV (PDF)</span>
+            <span data-i18n="nav.mobileDownloadCv">Download CV (PDF)</span>
           </a>
-          <p class="drawer-meta">📍 Suptech Santé • Morocco</p>
+          <p class="drawer-meta" data-i18n="nav.drawerMeta">📍 Suptech Santé • Morocco</p>
         </div>
       </div>
     </div>
@@ -196,7 +213,7 @@
             <!-- Status Indicator Badge -->
             <div class="hero-status-pill reveal" data-delay="100">
               <span class="pulse-indicator" aria-hidden="true"></span>
-              <span class="badge-text" data-cms-key="hero.statusBadge">📍 Morocco • Open to PFA Engineering Internships (Summer 2027)</span>
+              <span class="badge-text" data-cms-key="hero.statusBadge" data-i18n="hero.statusBadge">📍 Morocco • Open to PFA Engineering Internships (Summer 2027)</span>
             </div>
 
             <!-- Identity & Title -->
@@ -205,19 +222,19 @@
                 Souhail HAFIDI
               </h1>
               <p class="hero-role-title">
-                <span class="role-highlight" data-cms-key="hero.rolePrimary">AI & Software Engineering Student</span>
+                <span class="role-highlight" data-cms-key="hero.rolePrimary" data-i18n="hero.rolePrimary">AI & Software Engineering Student</span>
                 <span class="divider-slash" aria-hidden="true">/</span>
-                <span class="role-subhighlight" data-cms-key="hero.roleSecondary">Digital Health Innovator</span>
+                <span class="role-subhighlight" data-cms-key="hero.roleSecondary" data-i18n="hero.roleSecondary">Digital Health Innovator</span>
               </p>
             </div>
 
             <!-- Headline & Impact Statement -->
             <div class="hero-copy reveal" data-delay="200">
-              <h2 class="hero-headline" data-cms-key="hero.headline">
+              <h2 class="hero-headline" data-cms-key="hero.headline" data-i18n="hero.headline">
                 Engineering Intelligent Systems at the Intersection of 
                 <span class="gradient-text">AI, Software & Healthcare</span>.
               </h2>
-              <p class="hero-subtext" data-cms-key="hero.subtext">
+              <p class="hero-subtext" data-cms-key="hero.subtext" data-i18n="hero.subtext">
                 Second-year engineering student in GDIAS (<em>Génie Digital et Intelligence Artificielle en Santé</em>) at Suptech Santé, Morocco. Combining healthcare domain precision, full-stack software architecture, and applied machine learning to build dependable, high-impact digital solutions.
               </p>
               
@@ -225,7 +242,7 @@
                 <svg class="quote-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
                 </svg>
-                <p class="baseline-statement" data-cms-key="hero.baselineQuote">
+                <p class="baseline-statement" data-cms-key="hero.baselineQuote" data-i18n="hero.baselineQuote">
                   "An emerging AI and software engineer combining healthcare-oriented engineering, full-stack development, technical leadership, and business awareness to build practical, intelligent digital solutions."
                 </p>
               </div>
@@ -234,7 +251,7 @@
             <!-- Hero Actions -->
             <div class="hero-actions reveal" data-delay="250">
               <a href="#projects" class="btn btn-primary" id="hero-btn-projects">
-                <span>View Projects</span>
+                <span data-i18n="hero.viewProjects">View Projects</span>
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <line x1="7" y1="17" x2="17" y2="7"></line>
                   <polyline points="7 7 17 7 17 17"></polyline>
@@ -248,30 +265,30 @@
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Download CV</span>
+                <span data-i18n="hero.downloadCv">Download CV</span>
               </a>
 
               <a href="https://github.com/DrSouHou" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" id="hero-btn-github" aria-label="Visit Souhail HAFIDI GitHub Profile">
                 <svg class="icon icon-github" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                 </svg>
-                <span>GitHub Profile</span>
+                <span data-i18n="hero.githubProfile">GitHub Profile</span>
               </a>
 
               <a href="#contact" class="btn btn-ghost" id="hero-btn-contact">
-                <span>Get in Touch</span>
+                <span data-i18n="hero.getInTouch">Get in Touch</span>
               </a>
             </div>
 
             <!-- Quick Engineering Specialization Chips -->
             <div class="hero-tech-chips reveal" data-delay="300">
-              <span class="chip-label">Specializations:</span>
+              <span class="chip-label" data-i18n="hero.specLabel">Specializations:</span>
               <div class="chip-container">
-                <span class="tech-chip"><span class="chip-dot health"></span>GDIAS • Suptech Santé</span>
-                <span class="tech-chip"><span class="chip-dot ai"></span>Applied Machine Learning</span>
-                <span class="tech-chip"><span class="chip-dot code"></span>Next.js & FastAPI</span>
-                <span class="tech-chip"><span class="chip-dot hw"></span>ESP32-S3 & IoT</span>
-                <span class="tech-chip"><span class="chip-dot lead"></span>Tech Leadership</span>
+                <span class="tech-chip"><span class="chip-dot health"></span><span data-i18n="hero.chip1">GDIAS • Suptech Santé</span></span>
+                <span class="tech-chip"><span class="chip-dot ai"></span><span data-i18n="hero.chip2">Applied Machine Learning</span></span>
+                <span class="tech-chip"><span class="chip-dot code"></span><span data-i18n="hero.chip3">Next.js & FastAPI</span></span>
+                <span class="tech-chip"><span class="chip-dot hw"></span><span data-i18n="hero.chip4">ESP32-S3 & IoT</span></span>
+                <span class="tech-chip"><span class="chip-dot lead"></span><span data-i18n="hero.chip5">Tech Leadership</span></span>
               </div>
             </div>
 
@@ -310,7 +327,7 @@
               <!-- Floating Status Pill Badge -->
               <div class="avatar-status-pill">
                 <span class="pulse-indicator-avatar" aria-hidden="true"></span>
-                <span class="avatar-status-text">PFA Summer 2027</span>
+                <span class="avatar-status-text" data-i18n="hero.statusPillAvatar">PFA Summer 2027</span>
               </div>
 
               <!-- Technical Accent Tag -->
@@ -319,7 +336,7 @@
                   <polyline points="16 18 22 12 16 6"></polyline>
                   <polyline points="8 6 2 12 8 18"></polyline>
                 </svg>
-                <span>Health AI & Full-Stack</span>
+                <span data-i18n="hero.specPillAvatar">Health AI & Full-Stack</span>
               </div>
             </div>
           </div>
@@ -336,12 +353,12 @@
         <div class="section-header reveal">
           <div class="section-kicker">
             <span class="kicker-line"></span>
-            <span>Multidisciplinary Foundation</span>
+            <span data-i18n="about.kicker">Multidisciplinary Foundation</span>
           </div>
-          <h2 class="section-title" id="about-heading">
+          <h2 class="section-title" id="about-heading" data-i18n="about.title">
             The Bridge Between <span class="gradient-text">Healthcare Precision</span> & Software Architecture
           </h2>
-          <p class="section-subtitle">
+          <p class="section-subtitle" data-i18n="about.subtitle">
             How domain-specific clinical understanding informs robust engineering, analytical rigor, and user-centered system design.
           </p>
         </div>
@@ -352,29 +369,29 @@
           <article class="about-narrative-card card reveal">
             <div class="narrative-inner">
               <div class="card-badge-row">
-                <span class="badge badge-primary">Domain Insight</span>
-                <span class="badge badge-emerald">Clinical Precision</span>
+                <span class="badge badge-primary" data-i18n="about.badgeDomain">Domain Insight</span>
+                <span class="badge badge-emerald" data-i18n="about.badgePrecision">Clinical Precision</span>
               </div>
               
-              <h3 class="narrative-heading" data-cms-key="about.heading">
+              <h3 class="narrative-heading" data-cms-key="about.heading" data-i18n="about.heading">
                 Engineering Grounded in Real-World Medical Rigor
               </h3>
 
-              <p class="narrative-p" data-cms-key="about.p1">
+              <p class="narrative-p" data-cms-key="about.p1" data-i18n="about.p1">
                 My pathway into computer science and digital health is rooted in an unconventional, highly complementary background: <strong>dental prosthetics</strong>. In dental technology, error margins are calculated in fractions of a millimeter. A patient's outcome hinges directly on material mechanics, biocompatibility, strict protocols, and zero tolerance for functional failure.
               </p>
 
-              <p class="narrative-p" data-cms-key="about.p2">
+              <p class="narrative-p" data-cms-key="about.p2" data-i18n="about.p2">
                 Transitioning into the <strong>GDIAS program (Génie Digital et Intelligence Artificielle en Santé)</strong> at <strong>Suptech Santé</strong>, I ported that foundational obsession with exactness into software architecture and applied artificial intelligence. I don't treat healthcare datasets as abstract tensors; I understand the clinical workflows, practitioner pressure points, and patient vulnerabilities behind the numbers.
               </p>
 
-              <p class="narrative-p" data-cms-key="about.p3">
+              <p class="narrative-p" data-cms-key="about.p3" data-i18n="about.p3">
                 As an emerging engineer, my focus is not on claiming seniority, but on demonstrating <strong>rigorous initiative, proactive problem definition, and end-to-end execution</strong>. Whether orchestrating campus-scale cloud deployments, building responsive micro-services, or programming ESP32-S3 microcontrollers with custom sensory inputs, I engineer systems that are dependable, maintainable, and aligned with practical human needs.
               </p>
 
               <div class="quote-callout">
                 <span class="quote-bar"></span>
-                <p data-cms-key="about.quote">
+                <p data-cms-key="about.quote" data-i18n="about.quote">
                   "Software in healthcare cannot be built purely in the abstract. Real impact requires understanding both the code compiler and the clinical reality."
                 </p>
               </div>
@@ -393,9 +410,9 @@
                 </svg>
               </div>
               <div class="highlight-content">
-                <span class="highlight-meta">Academic Formation</span>
-                <h4 class="highlight-title">GDIAS 2nd Year — Suptech Santé</h4>
-                <p class="highlight-desc">
+                <span class="highlight-meta" data-i18n="about.h1Meta">Academic Formation</span>
+                <h4 class="highlight-title" data-i18n="about.h1Title">GDIAS 2nd Year — Suptech Santé</h4>
+                <p class="highlight-desc" data-i18n="about.h1Desc">
                   Génie Digital et Intelligence Artificielle en Santé (Mohammedia, Morocco). Formal engineering curriculum spanning biomedical computing, ML algorithms, distributed software systems, and data pipelines.
                 </p>
               </div>
@@ -411,9 +428,9 @@
                 </svg>
               </div>
               <div class="highlight-content">
-                <span class="highlight-meta">Core Specialization</span>
-                <h4 class="highlight-title">Healthcare AI, Full-Stack & IoT</h4>
-                <p class="highlight-desc">
+                <span class="highlight-meta" data-i18n="about.h2Meta">Core Specialization</span>
+                <h4 class="highlight-title" data-i18n="about.h2Title">Healthcare AI, Full-Stack & IoT</h4>
+                <p class="highlight-desc" data-i18n="about.h2Desc">
                   Building modular software systems bridging web interfaces (Next.js/React), computational backends (FastAPI/Python), and embedded hardware (ESP32-S3/C++).
                 </p>
               </div>
@@ -429,9 +446,9 @@
                 </svg>
               </div>
               <div class="highlight-content">
-                <span class="highlight-meta">Engineering Philosophy</span>
-                <h4 class="highlight-title">Systems Thinking & End-to-End Ownership</h4>
-                <p class="highlight-desc">
+                <span class="highlight-meta" data-i18n="about.h3Meta">Engineering Philosophy</span>
+                <h4 class="highlight-title" data-i18n="about.h3Title">Systems Thinking & End-to-End Ownership</h4>
+                <p class="highlight-desc" data-i18n="about.h3Desc">
                   Combining technical architectural rigor with commercial awareness. Translating ambiguous stakeholder operational bottlenecks into structured, testable software deployments.
                 </p>
               </div>
@@ -446,9 +463,9 @@
                 </svg>
               </div>
               <div class="highlight-content">
-                <span class="highlight-meta">Target Milestone</span>
-                <h4 class="highlight-title">Summer 2027 PFA Engineering Internship</h4>
-                <p class="highlight-desc">
+                <span class="highlight-meta" data-i18n="about.h4Meta">Target Milestone</span>
+                <h4 class="highlight-title" data-i18n="about.h4Title">Summer 2027 PFA Engineering Internship</h4>
+                <p class="highlight-desc" data-i18n="about.h4Desc">
                   Actively preparing for Projet de Fin d'Année (PFA) engineering internships across Morocco and internationally in Digital Health, AI engineering, or full-stack software development.
                 </p>
               </div>
@@ -468,21 +485,21 @@
         <div class="section-header text-center reveal">
           <div class="section-kicker justify-center">
             <span class="kicker-line"></span>
-            <span>Technical Capabilities</span>
+            <span data-i18n="skills.kicker">Technical Capabilities</span>
             <span class="kicker-line"></span>
           </div>
-          <h2 class="section-title" id="skills-heading">
+          <h2 class="section-title" id="skills-heading" data-i18n="skills.title">
             Engineering Toolkit & <span class="gradient-text">Competencies</span>
           </h2>
-          <p class="section-subtitle centered">
+          <p class="section-subtitle centered" data-i18n="skills.subtitle">
             A balanced stack spanning systems-level programming, modern web application development, machine learning engineering, and physical IoT devices.
           </p>
         </div>
 
         <!-- Skills Legend -->
         <div class="skills-legend reveal" data-delay="100">
-          <span class="legend-item"><span class="badge-dot badge-applied"></span> Applied in Live / Production Projects</span>
-          <span class="legend-item"><span class="badge-dot badge-focus"></span> Academic & Ongoing Active Focus</span>
+          <span class="legend-item"><span class="badge-dot badge-applied"></span> <span data-i18n="skills.legendApplied">Applied in Live / Production Projects</span></span>
+          <span class="legend-item"><span class="badge-dot badge-focus"></span> <span data-i18n="skills.legendFocus">Academic & Ongoing Active Focus</span></span>
         </div>
 
         <div class="skills-grid">
@@ -497,8 +514,8 @@
                 </svg>
               </div>
               <div>
-                <h3 class="category-title">Programming & Frameworks</h3>
-                <p class="category-subtitle">Core languages & client/server architectures</p>
+                <h3 class="category-title" data-i18n="skills.cat1Title">Programming & Frameworks</h3>
+                <p class="category-subtitle" data-i18n="skills.cat1Sub">Core languages & client/server architectures</p>
               </div>
             </div>
 
@@ -551,8 +568,8 @@
                 </svg>
               </div>
               <div>
-                <h3 class="category-title">AI & Data Engineering</h3>
-                <p class="category-subtitle">Applied modeling, heuristics & LLM integration</p>
+                <h3 class="category-title" data-i18n="skills.cat2Title">AI & Data Engineering</h3>
+                <p class="category-subtitle" data-i18n="skills.cat2Sub">Applied modeling, heuristics & LLM integration</p>
               </div>
             </div>
 
@@ -599,8 +616,8 @@
                 </svg>
               </div>
               <div>
-                <h3 class="category-title">Databases & Infrastructure</h3>
-                <p class="category-subtitle">Storage systems, DevOps & edge hosting</p>
+                <h3 class="category-title" data-i18n="skills.cat3Title">Databases & Infrastructure</h3>
+                <p class="category-subtitle" data-i18n="skills.cat3Sub">Storage systems, DevOps & edge hosting</p>
               </div>
             </div>
 
@@ -654,8 +671,8 @@
                 </svg>
               </div>
               <div>
-                <h3 class="category-title">Embedded & Hardware</h3>
-                <p class="category-subtitle">Physical computing & microcontrollers</p>
+                <h3 class="category-title" data-i18n="skills.cat4Title">Embedded & Hardware</h3>
+                <p class="category-subtitle" data-i18n="skills.cat4Sub">Physical computing & microcontrollers</p>
               </div>
             </div>
 
@@ -699,12 +716,12 @@
         <div class="section-header reveal">
           <div class="section-kicker">
             <span class="kicker-line"></span>
-            <span>Proof of Execution</span>
+            <span data-i18n="projects.kicker">Proof of Execution</span>
           </div>
-          <h2 class="section-title" id="projects-heading">
+          <h2 class="section-title" id="projects-heading" data-i18n="projects.title">
             Featured <span class="gradient-text">Engineering Projects</span>
           </h2>
-          <p class="section-subtitle">
+          <p class="section-subtitle" data-i18n="projects.subtitle">
             Demonstrating structured problem analysis, architectural decisions, and end-to-end implementation across software and hardware.
           </p>
         </div>
@@ -713,19 +730,19 @@
         <div class="filter-controls-container reveal" data-delay="100">
           <div class="filter-controls" role="group" aria-label="Filter projects by domain">
             <button type="button" class="filter-btn active" data-filter="all" id="filter-all">
-              <span>All Projects</span>
+              <span data-i18n="projects.filterAll">All Projects</span>
               <span class="count-badge" id="count-all">4</span>
             </button>
             <button type="button" class="filter-btn" data-filter="fullstack" id="filter-fullstack">
-              <span>Full-Stack</span>
+              <span data-i18n="projects.filterFullstack">Full-Stack</span>
               <span class="count-badge" id="count-fullstack">2</span>
             </button>
             <button type="button" class="filter-btn" data-filter="ai-health" id="filter-ai-health">
-              <span>AI & Health</span>
+              <span data-i18n="projects.filterAiHealth">AI & Health</span>
               <span class="count-badge" id="count-ai-health">1</span>
             </button>
             <button type="button" class="filter-btn" data-filter="hardware" id="filter-hardware">
-              <span>Hardware & IoT</span>
+              <span data-i18n="projects.filterHardware">Hardware & IoT</span>
               <span class="count-badge" id="count-hardware">1</span>
             </button>
           </div>
@@ -965,12 +982,12 @@
         <div class="section-header reveal">
           <div class="section-kicker">
             <span class="kicker-line"></span>
-            <span>Beyond The Terminal</span>
+            <span data-i18n="experience.kicker">Beyond The Terminal</span>
           </div>
-          <h2 class="section-title" id="experience-heading">
+          <h2 class="section-title" id="experience-heading" data-i18n="experience.title">
             Technical Leadership & <span class="gradient-text">Commercial Maturity</span>
           </h2>
-          <p class="section-subtitle">
+          <p class="section-subtitle" data-i18n="experience.subtitle">
             An engineer is defined not only by syntax, but by the ability to coordinate teams, understand customer requirements, and communicate complex concepts clearly.
           </p>
         </div>
@@ -989,20 +1006,20 @@
                 </svg>
               </div>
               <div class="exp-role-meta">
-                <span class="exp-period">Active Leadership</span>
-                <h3 class="exp-role">Head of Tech & Innovation</h3>
-                <h4 class="exp-org">APEX DIGITAL (UIB - Université Internationale de Bir Anzarane)</h4>
+                <span class="exp-period" data-i18n="exp.apexPeriod">Active Leadership</span>
+                <h3 class="exp-role" data-i18n="exp.apexRole">Head of Tech & Innovation</h3>
+                <h4 class="exp-org" data-i18n="exp.apexOrg">APEX DIGITAL (UIB - Université Internationale de Bir Anzarane)</h4>
               </div>
             </div>
 
-            <p class="exp-description">
+            <p class="exp-description" data-i18n="exp.apexDesc">
               Directing technical direction for high-impact campus digital solutions. Coordinating student engineering teams, overseeing code quality and architectural decisions, managing Git workflows, and establishing automated deployment pipelines on Cloudflare Pages.
             </p>
 
             <ul class="exp-bullets">
-              <li>Architected and delivered the live multi-campus recruitment portal serving university applicants.</li>
-              <li>Mentored peers in modern frontend engineering, component isolation, and clean state handling.</li>
-              <li>Championed agile delivery cycles and standardized project specification documents.</li>
+              <li data-i18n="exp.apexB1">Architected and delivered the live multi-campus recruitment portal serving university applicants.</li>
+              <li data-i18n="exp.apexB2">Mentored peers in modern frontend engineering, component isolation, and clean state handling.</li>
+              <li data-i18n="exp.apexB3">Championed agile delivery cycles and standardized project specification documents.</li>
             </ul>
           </article>
 
@@ -1016,20 +1033,20 @@
                 </svg>
               </div>
               <div class="exp-role-meta">
-                <span class="exp-period">Client & Commercial Acumen</span>
-                <h3 class="exp-role">B2B Coffee Specialist</h3>
-                <h4 class="exp-org">Nespresso</h4>
+                <span class="exp-period" data-i18n="exp.nespressoPeriod">Client & Commercial Acumen</span>
+                <h3 class="exp-role" data-i18n="exp.nespressoRole">B2B Coffee Specialist</h3>
+                <h4 class="exp-org" data-i18n="exp.nespressoOrg">Nespresso</h4>
               </div>
             </div>
 
-            <p class="exp-description">
+            <p class="exp-description" data-i18n="exp.nespressoDesc">
               Engaged corporate clients and enterprise accounts with structured discovery and consultative problem-solving. Developed acute commercial intuition, account negotiation skills, and high-standard customer experience under demanding corporate SLAs.
             </p>
 
             <ul class="exp-bullets">
-              <li>Conducted needs analysis with decision-makers to tailor custom contractual service agreements.</li>
-              <li>Instilled deep appreciation for brand reputation, user touchpoint quality, and client retention metrics.</li>
-              <li>Translates directly into understanding business ROI when designing software architectures.</li>
+              <li data-i18n="exp.nespressoB1">Conducted needs analysis with decision-makers to tailor custom contractual service agreements.</li>
+              <li data-i18n="exp.nespressoB2">Instilled deep appreciation for brand reputation, user touchpoint quality, and client retention metrics.</li>
+              <li data-i18n="exp.nespressoB3">Translates directly into understanding business ROI when designing software architectures.</li>
             </ul>
           </article>
 
@@ -1042,20 +1059,20 @@
                 </svg>
               </div>
               <div class="exp-role-meta">
-                <span class="exp-period">Pedagogy & Communication</span>
-                <h3 class="exp-role">English Language Instruction & Mentorship</h3>
-                <h4 class="exp-org">Academic & Community Education</h4>
+                <span class="exp-period" data-i18n="exp.englishPeriod">Pedagogy & Communication</span>
+                <h3 class="exp-role" data-i18n="exp.englishRole">English Language Instruction & Mentorship</h3>
+                <h4 class="exp-org" data-i18n="exp.englishOrg">Academic & Community Education</h4>
               </div>
             </div>
 
-            <p class="exp-description">
+            <p class="exp-description" data-i18n="exp.englishDesc">
               Taught English language proficiency and technical communication to diverse student cohorts. Sharpened the rare ability to deconstruct complex conceptual frameworks into accessible, structured pedagogical lessons.
             </p>
 
             <ul class="exp-bullets">
-              <li>Refined clear technical presentation abilities and empathetic audience engagement.</li>
-              <li>Cultivated high active listening discipline, vital for capturing nuanced engineering requirements.</li>
-              <li>Trilingual proficiency across English, French, and Arabic/Darija for global engineering collaboration.</li>
+              <li data-i18n="exp.englishB1">Refined clear technical presentation abilities and empathetic audience engagement.</li>
+              <li data-i18n="exp.englishB2">Cultivated high active listening discipline, vital for capturing nuanced engineering requirements.</li>
+              <li data-i18n="exp.englishB3">Trilingual proficiency across English, French, and Arabic/Darija for global engineering collaboration.</li>
             </ul>
           </article>
 
@@ -1071,13 +1088,13 @@
         <div class="section-header text-center reveal">
           <div class="section-kicker justify-center">
             <span class="kicker-line"></span>
-            <span>Let's Build Together</span>
+            <span data-i18n="contact.kicker">Let's Build Together</span>
             <span class="kicker-line"></span>
           </div>
-          <h2 class="section-title" id="contact-heading">
+          <h2 class="section-title" id="contact-heading" data-i18n="contact.title">
             Get in <span class="gradient-text">Touch</span>
           </h2>
-          <p class="section-subtitle centered">
+          <p class="section-subtitle centered" data-i18n="contact.subtitle">
             Open to Summer 2027 PFA engineering internships, digital health research collaborations, and ambitious software initiatives.
           </p>
         </div>
@@ -1089,14 +1106,14 @@
               
               <!-- Column 1: Coordinates & Direct Actions -->
               <div class="contact-info-col">
-                <h3 class="contact-col-title">Engineering Inquiries & Internship Opportunities</h3>
-                <p class="contact-col-desc">
+                <h3 class="contact-col-title" data-i18n="contact.colTitle">Engineering Inquiries & Internship Opportunities</h3>
+                <p class="contact-col-desc" data-i18n="contact.colDesc">
                   I am actively seeking <strong>Summer 2027 PFA internships</strong> in AI engineering, full-stack software development, and biomedical computing. Feel free to copy my direct contact address or explore my repositories.
                 </p>
 
                 <!-- Email Copy Widget -->
                 <div class="email-copy-box">
-                  <span class="box-label">Direct Email Address:</span>
+                  <span class="box-label" data-i18n="contact.emailLabel">Direct Email Address:</span>
                   <div class="email-input-wrapper">
                     <input type="text" readonly value="hafidisouhail02@gmail.com" id="email-address-field" class="email-field" aria-label="Souhail HAFIDI Email">
                     <button type="button" class="btn btn-primary btn-copy" id="copy-email-btn" aria-label="Copy email address to clipboard">
@@ -1107,7 +1124,7 @@
                       <svg class="icon check-icon hidden" id="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
-                      <span id="copy-btn-text">Copy Email</span>
+                      <span id="copy-btn-text" data-i18n="contact.copyBtn">Copy Email</span>
                     </button>
                   </div>
                   <div class="copy-feedback-msg" id="copy-feedback" aria-live="polite"></div>
@@ -1123,7 +1140,7 @@
                       </svg>
                     </div>
                     <div class="channel-text">
-                      <span class="channel-title">GitHub Profile</span>
+                      <span class="channel-title" data-i18n="contact.githubTitle">GitHub Profile</span>
                       <span class="channel-value">github.com/DrSouHou</span>
                     </div>
                     <svg class="icon arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1139,7 +1156,7 @@
                       </svg>
                     </div>
                     <div class="channel-text">
-                      <span class="channel-title">LinkedIn Connection</span>
+                      <span class="channel-title" data-i18n="contact.linkedinTitle">LinkedIn Connection</span>
                       <span class="channel-value">linkedin.com/in/souhail-hafidi</span>
                     </div>
                     <svg class="icon arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1156,8 +1173,8 @@
                       </svg>
                     </div>
                     <div class="channel-text">
-                      <span class="channel-title">Location & Mobility</span>
-                      <span class="channel-value">Mohammedia / Casablanca, Morocco • Open to Global & Remote</span>
+                      <span class="channel-title" data-i18n="contact.locTitle">Location & Mobility</span>
+                      <span class="channel-value" data-i18n="contact.locValue">Rabat, Morocco • Open to Global & Remote</span>
                     </div>
                   </div>
 
@@ -1168,8 +1185,8 @@
               <!-- Column 2: Direct Fast Message Launcher & CV Download -->
               <div class="contact-actions-col">
                 <div class="quick-mail-box">
-                  <h4 class="quick-title">Ready to Discuss a Collaboration?</h4>
-                  <p class="quick-desc">
+                  <h4 class="quick-title" data-i18n="contact.quickTitle">Ready to Discuss a Collaboration?</h4>
+                  <p class="quick-desc" data-i18n="contact.quickDesc">
                     Send a direct email inquiry or download the complete curriculum vitae for your engineering recruitment pipeline.
                   </p>
                   
@@ -1179,7 +1196,7 @@
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                         <polyline points="22,6 12,13 2,6"></polyline>
                       </svg>
-                      <span>Open Mail Client</span>
+                      <span data-i18n="contact.openMail">Open Mail Client</span>
                     </a>
 
                     <a href="assets/docs/Souhail_HAFIDI_CV.pdf" download="Souhail_HAFIDI_CV.pdf" class="btn btn-cv-hero btn-block" id="contact-download-cv-btn" target="_blank" rel="noopener noreferrer">
@@ -1188,15 +1205,15 @@
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                       </svg>
-                      <span>Download Resume (CV PDF)</span>
+                      <span data-i18n="contact.downloadCvPdf">Download Resume (CV PDF)</span>
                     </a>
                   </div>
 
                   <div class="academic-affiliation-box">
                     <div class="affiliation-header">
-                      <span class="affil-badge">Suptech Santé Engineering</span>
+                      <span class="affil-badge" data-i18n="contact.affilBadge">Suptech Santé Engineering</span>
                     </div>
-                    <p class="affil-text">
+                    <p class="affil-text" data-i18n="contact.affilText">
                       Université Mohammed VI des Sciences et de la Santé (UM6SS) ecosystem / Suptech Santé — GDIAS Program.
                     </p>
                   </div>
@@ -1220,24 +1237,24 @@
       <div class="footer-top">
         <div class="footer-brand">
           <span class="logo-mark">SH<span class="dot">.</span></span>
-          <p class="footer-brand-desc">
+          <p class="footer-brand-desc" data-i18n="footer.brandDesc">
             Souhail HAFIDI — AI & Software Engineering Student in GDIAS at Suptech Santé, Morocco.
           </p>
         </div>
 
         <nav class="footer-nav" aria-label="Footer Navigation">
           <ul class="footer-links">
-            <li><a href="#about">About</a></li>
-            <li><a href="#skills">Skills</a></li>
-            <li><a href="#projects">Projects</a></li>
-            <li><a href="#experience">Leadership</a></li>
-            <li><a href="#contact">Contact</a></li>
+            <li><a href="#about" data-i18n="nav.about">About</a></li>
+            <li><a href="#skills" data-i18n="nav.skills">Skills</a></li>
+            <li><a href="#projects" data-i18n="nav.projects">Projects</a></li>
+            <li><a href="#experience" data-i18n="nav.experience">Leadership</a></li>
+            <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
           </ul>
         </nav>
       </div>
 
       <div class="footer-bottom">
-        <p class="copyright-text">
+        <p class="copyright-text" data-i18n="footer.copyright">
           Copyright &copy; <span id="current-year">2026</span> <strong>Souhail HAFIDI</strong>. Built with clean code and purpose.
         </p>
 
@@ -1464,7 +1481,5 @@
     <span class="toast-message" id="toast-message">Notification</span>
   </div>
 
-  <!-- Scripts -->
-  <script src="app.js"></script>
 </body>
 </html>

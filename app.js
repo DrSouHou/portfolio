@@ -1,15 +1,22 @@
 /**
  * Souhail HAFIDI — Personal Engineering Portfolio
- * Architecture: Clean Vanilla JavaScript & In-Browser CMS Engine
+ * Architecture: Clean Vanilla JavaScript & In-Browser CMS Engine with Supabase Cloud Storage
  * Features:
- * - Dynamic data hydration from localStorage or default fallback
+ * - Persistent Cloud Data Layer via Supabase (@supabase/supabase-js)
  * - Live on-page content editing (contenteditable)
  * - Super User Admin authentication (DrSouHou / admin)
- * - Dynamic project card rendering, filtering, adding, editing, deleting
+ * - Dynamic project card rendering, filtering, adding, editing, deleting synced with Supabase
  * - JSON data export & backup
- * - Reset to defaults
+ * - Reset to defaults in Supabase cloud
  * - Responsive navigation, scroll-spy, email clipboard copy, reveal animations
  */
+
+/* ==========================================================================
+   Supabase Client Configuration
+   ========================================================================== */
+const SUPABASE_URL = "https://edocupeoqtztuphfbwyr.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_LEUUvNpnpmyA7Oo_AC4Mxw_v5XPFgJc"; // Keep current key
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
@@ -105,14 +112,184 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
+  /* ==========================================================================
+     1.5 Hardcoded Fallback Seed Data (Prevent Empty Screen)
+     ========================================================================== */
+  const DEFAULT_PROJECTS = [
+    {
+      id: 1,
+      title: "APEX DIGITAL Recruitment & Onboarding Platform",
+      description: "Centralized multi-campus recruitment portal streamlining applications across academic programs with automated backend integration.",
+      role: "Head of Tech & Innovation / Lead Full-Stack Developer",
+      tags: ["Next.js", "TypeScript", "React", "Tailwind CSS", "Cloudflare Pages"],
+      status: "Live",
+      live_url: "https://apexdigital.dpdns.org",
+      github_url: "https://github.com/DrSouHou"
+    },
+    {
+      id: 2,
+      title: "University Boarding Management Platform",
+      description: "Centralized student accommodation system featuring REST APIs, authentication, and structured NoSQL data modeling.",
+      role: "Lead Backend & Full-Stack Engineer",
+      tags: ["REST API", "NoSQL", "Authentication", "CI/CD"],
+      status: "Completed",
+      live_url: null,
+      github_url: "https://github.com/DrSouHou"
+    },
+    {
+      id: 3,
+      title: "ESP32-S3 Digital Business Card & Workflow Launcher",
+      description: "Embedded hardware-to-desktop automation platform triggering digital profile workflows with RGB GPIO state indicators.",
+      role: "Embedded Systems Developer",
+      tags: ["C++", "ESP32-S3", "Hardware Automation", "IoT"],
+      status: "Hardware Prototype",
+      live_url: null,
+      github_url: "https://github.com/DrSouHou/ESP32-S3-Digital-Card"
+    },
+    {
+      id: 4,
+      title: "HealthBridge AI",
+      description: "Multilingual (Arabic, French, English) preliminary triage framework categorizing symptom urgency for patient guidance.",
+      role: "System Architect & AI Developer",
+      tags: ["FastAPI", "React", "Gemini API", "XGBoost", "SQLite"],
+      status: "Concept MVP",
+      live_url: null,
+      github_url: "https://github.com/DrSouHou"
+    }
+  ];
+
   const STORAGE_KEY = 'portfolio_data';
   const AUTH_KEY = 'isAdminLoggedIn';
   const ADMIN_USER = 'DrSouHou';
   const ADMIN_PASS = 'admin';
 
   /* ==========================================================================
-     2. Storage & Hydration Utilities
+     2. Supabase Cloud Data Layer & Hydration Utilities
      ========================================================================== */
+  function mapSupabaseToProject(row) {
+    if (!row) return null;
+
+    // Enrich with known case study bottleneck / solution / tags if available
+    const known = defaultPortfolioData.projects.find(p => 
+      p.title.toLowerCase().trim() === (row.title || '').toLowerCase().trim() ||
+      (row.title && p.title.toLowerCase().includes(row.title.toLowerCase().slice(0, 12))) ||
+      (row.id && String(p.id) === String(row.id))
+    );
+
+    let meta = {};
+    if (row.description) {
+      if (typeof row.description === 'string' && row.description.trim().startsWith('{')) {
+        try {
+          meta = JSON.parse(row.description);
+        } catch (e) {
+          meta = { solution: row.description };
+        }
+      } else {
+        meta = { solution: row.description };
+      }
+    }
+
+    // Parse tech stack / tags (array or string)
+    let techStack = [];
+    if (Array.isArray(row.tags)) {
+      techStack = row.tags;
+    } else if (Array.isArray(row.techStack)) {
+      techStack = row.techStack;
+    } else if (typeof row.tags === 'string' && row.tags.trim()) {
+      techStack = row.tags.split(',').map(t => t.trim()).filter(Boolean);
+    } else if (known && known.techStack) {
+      techStack = known.techStack;
+    }
+
+    const liveUrl = row.live_url || (!row.github_url && row.actionUrl) || (known ? known.actionUrl : '');
+    const gitUrl = row.github_url || (row.github_url === null ? '' : (row.actionUrl && row.actionUrl.includes('github.com') ? row.actionUrl : ''));
+    const isGit = Boolean(gitUrl && !liveUrl) || (meta.isGithub === true) || (row.isGithub === true) || (liveUrl && liveUrl.includes('github.com')) || (known && known.isGithub);
+    const actionUrl = liveUrl || gitUrl || meta.actionUrl || (known ? known.actionUrl : '');
+
+    // Category resolution
+    let category = row.category || meta.category;
+    if (!category && known) {
+      category = known.category;
+    }
+    if (!category) {
+      const combined = ((row.title || '') + ' ' + (techStack.join(' ')) + ' ' + (row.role || '') + ' ' + (typeof row.description === 'string' ? row.description : '')).toLowerCase();
+      if (combined.includes('esp32') || combined.includes('c++') || combined.includes('hardware') || combined.includes('iot') || combined.includes('embedded')) {
+        category = 'hardware';
+      } else if (combined.includes('health') || combined.includes('triage') || combined.includes('clinical') || combined.includes('medical') || combined.includes('ai') || combined.includes('xgboost')) {
+        category = 'ai-health';
+      } else {
+        category = 'fullstack';
+      }
+    }
+
+    const categoryTag = row.categoryTag || meta.categoryTag || (known ? known.categoryTag : '') || (
+      category === 'hardware' ? 'Embedded IoT' :
+      category === 'ai-health' ? 'Digital Health AI' :
+      'Full-Stack Platform'
+    );
+
+    const statusText = row.status || row.statusText || meta.statusText || (known ? known.statusText : 'Active');
+    let statusType = row.statusType || meta.statusType || (known ? known.statusType : '');
+    if (!statusType) {
+      const sLower = statusText.toLowerCase();
+      if (sLower.includes('live') || sLower.includes('prod')) statusType = 'live';
+      else if (sLower.includes('prototype')) statusType = 'prototype';
+      else if (sLower.includes('concept') || sLower.includes('mvp')) statusType = 'concept';
+      else statusType = 'completed';
+    }
+
+    const bottleneck = meta.bottleneck || row.bottleneck || (known ? known.bottleneck : '');
+    const solution = meta.solution || row.solution || (typeof row.description === 'string' && !row.description.startsWith('{') ? row.description : '') || (known ? known.solution : '');
+
+    return {
+      id: String(row.id),
+      title: row.title || (known ? known.title : 'Untitled Project'),
+      category,
+      categoryTag,
+      statusText,
+      statusType,
+      role: row.role || (known ? known.role : 'Contributor'),
+      bottleneck,
+      solution,
+      description: row.description || solution,
+      techStack,
+      live_url: liveUrl,
+      github_url: gitUrl,
+      actionUrl,
+      actionLabel: meta.actionLabel || row.actionLabel || (known ? known.actionLabel : (isGit ? 'DrSouHou / GitHub' : (actionUrl ? 'Visit Live Platform' : ''))),
+      isGithub: isGit,
+      metaNote: meta.metaNote || row.metaNote || (known ? known.metaNote : ''),
+      credentialBadge: meta.credentialBadge || row.credentialBadge || (known ? known.credentialBadge : ''),
+      multilingualTags: Array.isArray(meta.multilingualTags) ? meta.multilingualTags : (Array.isArray(row.multilingualTags) ? row.multilingualTags : (known ? known.multilingualTags : []))
+    };
+  }
+
+  function mapProjectToSupabase(proj) {
+    const isGit = proj.isGithub || (proj.actionUrl && proj.actionUrl.includes('github.com'));
+    const meta = {
+      bottleneck: proj.bottleneck || '',
+      solution: proj.solution || '',
+      category: proj.category || 'fullstack',
+      categoryTag: proj.categoryTag || '',
+      statusType: proj.statusType || 'live',
+      statusText: proj.statusText || 'Completed',
+      actionLabel: proj.actionLabel || '',
+      metaNote: proj.metaNote || '',
+      credentialBadge: proj.credentialBadge || '',
+      multilingualTags: proj.multilingualTags || []
+    };
+
+    return {
+      title: proj.title,
+      role: proj.role || '',
+      description: JSON.stringify(meta),
+      tags: Array.isArray(proj.techStack) ? proj.techStack : [],
+      status: proj.statusText || 'Completed',
+      live_url: !isGit ? (proj.actionUrl || null) : null,
+      github_url: isGit ? (proj.actionUrl || null) : null
+    };
+  }
+
   function loadStoredData() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -127,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       }
     } catch (err) {
-      console.warn('Failed to parse portfolio_data from localStorage:', err);
+      console.warn('Failed to parse cached portfolio_data:', err);
     }
     return JSON.parse(JSON.stringify(defaultPortfolioData));
   }
@@ -136,11 +313,91 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (err) {
-      console.error('Failed to save to localStorage:', err);
+      console.error('Failed to update local cache:', err);
     }
   }
 
   let portfolioData = loadStoredData();
+
+  /* ==========================================================================
+     2.1 Supabase Projects Loader & Realtime Sync
+     ========================================================================== */
+  async function loadProjects() {
+    console.log("🔍 Fetching projects from Supabase...");
+    
+    if (!supabaseClient) {
+      console.warn("⚠️ Supabase client not initialized. Rendering default projects.");
+      renderProjects(DEFAULT_PROJECTS);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("❌ Supabase query error:", error.message);
+        renderProjects(DEFAULT_PROJECTS);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn("⚠️ Table 'projects' is empty. Displaying fallback projects.");
+        renderProjects(DEFAULT_PROJECTS);
+      } else {
+        console.log(`✅ Loaded ${data.length} projects from Supabase.`);
+        renderProjects(data);
+      }
+    } catch (err) {
+      console.error("❌ Unexpected fetch error:", err);
+      renderProjects(DEFAULT_PROJECTS);
+    }
+  }
+
+  async function seedDefaultProjectsToSupabase() {
+    if (!supabaseClient) return;
+    try {
+      const seedRows = defaultPortfolioData.projects.map(mapProjectToSupabase);
+      const { data, error } = await supabaseClient
+        .from('projects')
+        .insert(seedRows)
+        .select();
+
+      if (error) {
+        console.error('Failed to seed projects into Supabase:', error);
+      } else if (data && data.length > 0) {
+        portfolioData.projects = data.map(mapSupabaseToProject);
+        saveStoredData(portfolioData);
+        renderProjects(portfolioData.projects);
+        showToast('Connected to Supabase cloud! Projects initialized.', '☁️');
+      }
+    } catch (err) {
+      console.error('Exception seeding Supabase:', err);
+    }
+  }
+
+  function subscribeToProjects() {
+    if (!supabaseClient) return;
+    try {
+      supabaseClient
+        .channel('public:projects')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, async () => {
+          const { data, error } = await supabaseClient
+            .from('projects')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!error && data && data.length > 0) {
+            renderProjects(data);
+          }
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('Supabase realtime subscription not active:', err);
+    }
+  }
 
   function getNestedValue(obj, path) {
     return path.split('.').reduce((prev, curr) => (prev ? prev[curr] : undefined), obj);
@@ -175,11 +432,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function hydrateContentElements(data) {
+    if (!data) return;
     const elements = document.querySelectorAll('[data-cms-key]');
     elements.forEach(el => {
       const key = el.getAttribute('data-cms-key');
       const val = getNestedValue(data, key);
-      if (val !== undefined) {
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
         el.innerHTML = val;
       }
     });
@@ -243,6 +501,98 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
+     3.5 Internationalization (i18n) Engine — English (EN) & French (FR)
+     ========================================================================== */
+  let currentLang = 'en';
+  try {
+    const saved = localStorage.getItem('portfolio_lang');
+    if (saved === 'fr' || saved === 'en') {
+      currentLang = saved;
+    }
+  } catch (e) {
+    currentLang = 'en';
+  }
+
+  function getCurrentLanguage() {
+    return currentLang;
+  }
+
+  function setLanguage(lang) {
+    currentLang = (lang === 'fr') ? 'fr' : 'en';
+    try {
+      localStorage.setItem('portfolio_lang', currentLang);
+    } catch (e) {
+      console.warn('Could not save language to localStorage:', e);
+    }
+
+    document.documentElement.setAttribute('lang', currentLang);
+
+    const translations = (window.PORTFOLIO_TRANSLATIONS && window.PORTFOLIO_TRANSLATIONS[currentLang]) || null;
+    if (translations) {
+      if (translations.docTitle) {
+        document.title = translations.docTitle;
+      }
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[key] !== undefined) {
+          el.innerHTML = translations[key];
+        }
+      });
+    }
+
+    // Update active class & accessibility attributes on switcher buttons
+    const btnEnDesktop = document.getElementById('lang-btn-en');
+    const btnFrDesktop = document.getElementById('lang-btn-fr');
+    const btnEnMobile = document.getElementById('mobile-lang-btn-en');
+    const btnFrMobile = document.getElementById('mobile-lang-btn-fr');
+
+    if (btnEnDesktop) {
+      btnEnDesktop.classList.toggle('active', currentLang === 'en');
+      btnEnDesktop.setAttribute('aria-pressed', currentLang === 'en' ? 'true' : 'false');
+    }
+    if (btnFrDesktop) {
+      btnFrDesktop.classList.toggle('active', currentLang === 'fr');
+      btnFrDesktop.setAttribute('aria-pressed', currentLang === 'fr' ? 'true' : 'false');
+    }
+    if (btnEnMobile) {
+      btnEnMobile.classList.toggle('active', currentLang === 'en');
+      btnEnMobile.setAttribute('aria-pressed', currentLang === 'en' ? 'true' : 'false');
+    }
+    if (btnFrMobile) {
+      btnFrMobile.classList.toggle('active', currentLang === 'fr');
+      btnFrMobile.setAttribute('aria-pressed', currentLang === 'fr' ? 'true' : 'false');
+    }
+
+    // Re-render project cards with updated language
+    if (typeof renderProjects === 'function') {
+      renderProjects(portfolioData.projects);
+    }
+  }
+
+  function initLanguageSwitcher() {
+    ['lang-btn-en', 'mobile-lang-btn-en'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          setLanguage('en');
+        });
+      }
+    });
+
+    ['lang-btn-fr', 'mobile-lang-btn-fr'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          setLanguage('fr');
+        });
+      }
+    });
+  }
+
+  /* ==========================================================================
      4. Dynamic Project Cards Rendering & Category Counts
      ========================================================================== */
   const projectsGrid = document.getElementById('projects-grid');
@@ -265,63 +615,141 @@ document.addEventListener('DOMContentLoaded', () => {
     if (countHardwareEl) countHardwareEl.textContent = hardwareCount;
   }
 
-  function renderProjects() {
-    if (!projectsGrid) return;
+  function renderProjects(projectsList) {
+    const container = document.getElementById('projects-container') 
+                   || document.getElementById('projects-grid')
+                   || document.querySelector('.projects-grid');
+
+    if (!container) {
+      console.error("❌ Projects container element not found in DOM!");
+      return;
+    }
+
+    const rawItems = (Array.isArray(projectsList) && projectsList.length > 0)
+      ? projectsList
+      : (Array.isArray(portfolioData.projects) && portfolioData.projects.length > 0 ? portfolioData.projects : DEFAULT_PROJECTS);
+
+    const projects = rawItems.map(mapSupabaseToProject).filter(Boolean);
+    portfolioData.projects = projects;
+    saveStoredData(portfolioData);
+
     updateCategoryCounts();
 
     const adminActive = isAdmin();
-    projectsGrid.innerHTML = '';
+    container.innerHTML = '';
 
-    portfolioData.projects.forEach((project, idx) => {
+    const tDict = (window.PORTFOLIO_TRANSLATIONS && window.PORTFOLIO_TRANSLATIONS[currentLang]) || null;
+    const bottleneckSubhead = (tDict && tDict['project.bottleneckSubhead']) || 'Operational Bottleneck';
+    const solutionSubhead = (tDict && tDict['project.solutionSubhead']) || 'Architectural Solution';
+    const overviewSubhead = (tDict && tDict['project.overviewSubhead']) || 'Project Overview';
+    const rolePrefix = (tDict && tDict['project.rolePrefix']) || 'Role: ';
+    const visitPlatformLabel = (tDict && tDict['project.visitPlatform']) || 'Visit Platform';
+    const viewRepoLabel = (tDict && tDict['project.viewRepo']) || 'View Repository';
+
+    projects.forEach((project, idx) => {
+      // Localized copy of project for current language
+      let displayProject = { ...project };
+
+      if (currentLang === 'fr' && window.PROJECTS_I18N && window.PROJECTS_I18N.fr) {
+        const frDict = window.PROJECTS_I18N.fr;
+        const matchedKey = Object.keys(frDict).find(k => 
+          k === project.id || 
+          (project.id && String(project.id).includes(k.replace('project-', ''))) ||
+          (project.title && (
+            (k === 'project-apex' && project.title.toLowerCase().includes('apex')) ||
+            (k === 'project-boarding' && (project.title.toLowerCase().includes('boarding') || project.title.toLowerCase().includes('résidence') || project.title.toLowerCase().includes('residence'))) ||
+            (k === 'project-esp32' && project.title.toLowerCase().includes('esp32')) ||
+            (k === 'project-healthbridge' && project.title.toLowerCase().includes('healthbridge'))
+          ))
+        );
+
+        if (matchedKey && frDict[matchedKey]) {
+          const frData = frDict[matchedKey];
+          if (frData.title) displayProject.title = frData.title;
+          if (frData.role) displayProject.role = frData.role;
+          if (frData.categoryTag) displayProject.categoryTag = frData.categoryTag;
+          if (frData.statusText) displayProject.statusText = frData.statusText;
+          if (frData.bottleneck) displayProject.bottleneck = frData.bottleneck;
+          if (frData.solution) displayProject.solution = frData.solution;
+          if (frData.actionLabel) displayProject.actionLabel = frData.actionLabel;
+          if (frData.metaNote) displayProject.metaNote = frData.metaNote;
+          if (frData.credentialBadge) displayProject.credentialBadge = frData.credentialBadge;
+          if (frData.multilingualTags) displayProject.multilingualTags = frData.multilingualTags;
+        }
+      }
+
       const card = document.createElement('article');
       card.className = 'project-card card';
-      card.setAttribute('data-category', project.category);
-      card.id = project.id || `project-${idx}`;
+      card.setAttribute('data-category', displayProject.category);
+      card.id = displayProject.id ? (String(displayProject.id).startsWith('project-') ? displayProject.id : `project-${displayProject.id}`) : `project-${idx}`;
 
       // Check filter
-      if (currentFilter !== 'all' && project.category !== currentFilter) {
+      if (currentFilter !== 'all' && displayProject.category !== currentFilter) {
         card.classList.add('filtered-out');
       }
 
       // Tech tags HTML
-      const techTagsHtml = (project.techStack || [])
+      const techTagsHtml = (displayProject.techStack || [])
         .map(t => `<span class="tech-tag">${escapeHtml(t)}</span>`)
         .join('');
 
       // Action / badge footer HTML
       let footerActionHtml = '';
-      if (project.actionUrl) {
-        const isGit = project.isGithub || project.actionUrl.includes('github.com');
+      const hasLive = Boolean(displayProject.live_url || (!displayProject.isGithub && displayProject.actionUrl));
+      const hasGit = Boolean(displayProject.github_url || (displayProject.isGithub && displayProject.actionUrl));
+
+      if (hasLive && hasGit) {
         footerActionHtml = `
-          <a href="${escapeHtml(project.actionUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm ${isGit ? 'btn-outline' : 'btn-primary'} project-action-btn" aria-label="${escapeHtml(project.actionLabel || 'Visit project')}">
-            ${isGit ? `
-              <svg class="icon icon-github" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-            ` : ''}
-            <span>${escapeHtml(project.actionLabel || (isGit ? 'View Repository' : 'Visit Platform'))}</span>
-            ${!isGit ? `
+          <div class="project-action-group" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <a href="${escapeHtml(displayProject.live_url || displayProject.actionUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary project-action-btn" aria-label="Visit ${escapeHtml(displayProject.title)}">
+              <span>${escapeHtml(displayProject.actionLabel || visitPlatformLabel)}</span>
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <line x1="10" y1="14" x2="21" y2="3"></line>
               </svg>
-            ` : ''}
+            </a>
+            <a href="${escapeHtml(displayProject.github_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline project-action-btn" aria-label="View ${escapeHtml(displayProject.title)} on GitHub">
+              <svg class="icon icon-github" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>GitHub</span>
+            </a>
+          </div>
+        `;
+      } else if (hasLive) {
+        footerActionHtml = `
+          <a href="${escapeHtml(displayProject.live_url || displayProject.actionUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary project-action-btn" aria-label="Visit ${escapeHtml(displayProject.title)}">
+            <span>${escapeHtml(displayProject.actionLabel || visitPlatformLabel)}</span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
           </a>
         `;
-      } else if (project.credentialBadge) {
+      } else if (hasGit) {
+        footerActionHtml = `
+          <a href="${escapeHtml(displayProject.github_url || displayProject.actionUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline project-action-btn" aria-label="View repository for ${escapeHtml(displayProject.title)} on GitHub">
+            <svg class="icon icon-github" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>${escapeHtml(displayProject.actionLabel || viewRepoLabel)}</span>
+          </a>
+        `;
+      } else if (displayProject.credentialBadge) {
         footerActionHtml = `
           <span class="credential-badge">
             <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 15l-2 5l9-11h-7l2-5l-9 11h7z"></path>
             </svg>
-            ${escapeHtml(project.credentialBadge)}
+            ${escapeHtml(displayProject.credentialBadge)}
           </span>
         `;
-      } else if (project.multilingualTags && project.multilingualTags.length > 0) {
+      } else if (displayProject.multilingualTags && displayProject.multilingualTags.length > 0) {
         footerActionHtml = `
           <div class="multilingual-badge">
-            ${project.multilingualTags.map(tag => `<span class="lang-tag">${escapeHtml(tag)}</span>`).join('')}
+            ${displayProject.multilingualTags.map(tag => `<span class="lang-tag">${escapeHtml(tag)}</span>`).join('')}
           </div>
         `;
       } else {
@@ -331,47 +759,61 @@ document.addEventListener('DOMContentLoaded', () => {
       // Admin Controls on Card
       const adminControlsHtml = adminActive ? `
         <div class="card-admin-actions">
-          <button type="button" class="btn-card-admin btn-card-edit" data-id="${escapeHtml(project.id)}" title="Edit project details">
+          <button type="button" class="btn-card-admin btn-card-edit" data-id="${escapeHtml(displayProject.id)}" title="Edit project details">
             <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             <span>Edit</span>
           </button>
-          <button type="button" class="btn-card-admin btn-card-delete" data-id="${escapeHtml(project.id)}" title="Delete project">
+          <button type="button" class="btn-card-admin btn-card-delete" data-id="${escapeHtml(displayProject.id)}" title="Delete project">
             <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             <span>Delete</span>
           </button>
         </div>
       ` : '';
 
+      // Sections for body
+      let bodySectionsHtml = '';
+      if (displayProject.bottleneck && displayProject.solution) {
+        bodySectionsHtml = `
+          <div class="project-section">
+            <h4 class="subhead">${escapeHtml(bottleneckSubhead)}</h4>
+            <p class="project-text">${escapeHtml(displayProject.bottleneck)}</p>
+          </div>
+          <div class="project-section">
+            <h4 class="subhead">${escapeHtml(solutionSubhead)}</h4>
+            <p class="project-text">${escapeHtml(displayProject.solution)}</p>
+          </div>
+        `;
+      } else {
+        const desc = displayProject.description || displayProject.solution || displayProject.bottleneck || '';
+        bodySectionsHtml = `
+          <div class="project-section">
+            <h4 class="subhead">${escapeHtml(overviewSubhead)}</h4>
+            <p class="project-text">${escapeHtml(desc)}</p>
+          </div>
+        `;
+      }
+
       card.innerHTML = `
         ${adminControlsHtml}
         <div class="project-header">
           <div class="status-badge-row">
-            <span class="status-pill status-${escapeHtml(project.statusType || 'live')}">
-              <span class="status-dot"></span> ${escapeHtml(project.statusText || 'Active')}
+            <span class="status-pill status-${escapeHtml(displayProject.statusType || 'live')}">
+              <span class="status-dot"></span> ${escapeHtml(displayProject.statusText || 'Active')}
             </span>
-            <span class="category-tag">${escapeHtml(project.categoryTag || 'Platform')}</span>
+            <span class="category-tag">${escapeHtml(displayProject.categoryTag || 'Platform')}</span>
           </div>
-          <h3 class="project-title">${escapeHtml(project.title)}</h3>
+          <h3 class="project-title">${escapeHtml(displayProject.title)}</h3>
           <div class="role-tag">
             <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span>Role: ${escapeHtml(project.role || 'Contributor')}</span>
+            <span>${escapeHtml(rolePrefix)}${escapeHtml(displayProject.role || 'Contributor')}</span>
           </div>
         </div>
 
         <div class="project-body">
-          <div class="project-section">
-            <h4 class="subhead">Operational Bottleneck</h4>
-            <p class="project-text">${escapeHtml(project.bottleneck)}</p>
-          </div>
-
-          <div class="project-section">
-            <h4 class="subhead">Architectural Solution</h4>
-            <p class="project-text">${escapeHtml(project.solution)}</p>
-          </div>
-
+          ${bodySectionsHtml}
           <div class="project-tech-stack" aria-label="Technology stack used">
             ${techTagsHtml}
           </div>
@@ -379,11 +821,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <div class="project-footer">
           ${footerActionHtml}
-          ${project.metaNote ? `<span class="project-meta-note">${escapeHtml(project.metaNote)}</span>` : ''}
+          ${displayProject.metaNote ? `<span class="project-meta-note">${escapeHtml(displayProject.metaNote)}</span>` : ''}
         </div>
       `;
 
-      projectsGrid.appendChild(card);
+      container.appendChild(card);
     });
 
     // Rebind project card admin buttons
@@ -549,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editorModal.classList.remove('hidden');
 
     if (projectId) {
-      const proj = portfolioData.projects.find(p => p.id === projectId);
+      const proj = portfolioData.projects.find(p => String(p.id) === String(projectId));
       if (!proj) return;
       if (editorModalTitle) editorModalTitle.textContent = 'Edit Engineering Project';
       editProjectId.value = proj.id;
@@ -619,32 +1061,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const actionUrl = editActionUrl.value.trim();
       const actionLabel = editActionLabel.value.trim();
       const metaNote = editMetaNote.value.trim();
+      const isGit = actionUrl.includes('github.com');
+
+      const submitBtn = document.getElementById('editor-submit-btn');
+      const origBtnText = submitBtn ? submitBtn.textContent : 'Save Project';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving to Cloud...';
+      }
 
       if (id) {
         // Update existing project
-        const index = portfolioData.projects.findIndex(p => p.id === id);
-        if (index !== -1) {
-          portfolioData.projects[index] = {
-            ...portfolioData.projects[index],
-            title,
-            category,
-            categoryTag,
-            statusText,
-            statusType,
-            role,
-            bottleneck,
-            solution,
-            techStack,
-            actionUrl,
-            actionLabel,
-            metaNote
-          };
-          showToast(`Updated "${title}"`, '✏️');
-        }
-      } else {
-        // Add new project
-        const newProj = {
-          id: 'project-' + Date.now(),
+        const numId = Number(id);
+        const index = portfolioData.projects.findIndex(p => String(p.id) === String(id));
+        const existing = index !== -1 ? portfolioData.projects[index] : null;
+
+        const updatedProj = {
+          ...(existing || {}),
+          id,
           title,
           category,
           categoryTag,
@@ -656,25 +1090,148 @@ document.addEventListener('DOMContentLoaded', () => {
           techStack,
           actionUrl,
           actionLabel,
-          metaNote
+          metaNote,
+          isGithub: isGit
         };
-        portfolioData.projects.unshift(newProj);
-        showToast(`Created new project "${title}"`, '🚀');
-      }
 
-      saveStoredData(portfolioData);
-      renderProjects();
-      closeProjectEditor();
+        if (index !== -1) {
+          portfolioData.projects[index] = updatedProj;
+        }
+
+        renderProjects();
+        saveStoredData(portfolioData);
+        closeProjectEditor();
+
+        if (supabaseClient) {
+          const payload = mapProjectToSupabase(updatedProj);
+          const updateQuery = !isNaN(numId)
+            ? supabaseClient.from('projects').update(payload).eq('id', numId).select()
+            : supabaseClient.from('projects').update(payload).eq('title', title).select();
+
+          updateQuery.then(({ data, error }) => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = origBtnText;
+            }
+            if (error) {
+              console.error('Supabase update error:', error);
+              showToast(`Updated locally (Cloud error: ${error.message})`, '⚠️');
+            } else if (data && data[0]) {
+              const mapped = mapSupabaseToProject(data[0]);
+              const i = portfolioData.projects.findIndex(p => String(p.id) === String(id) || String(p.id) === String(data[0].id));
+              if (i !== -1) portfolioData.projects[i] = mapped;
+              saveStoredData(portfolioData);
+              renderProjects();
+              showToast(`Updated "${title}" in Supabase cloud! ☁️`, '✏️');
+            } else {
+              showToast(`Updated "${title}" in Supabase cloud! ☁️`, '✏️');
+            }
+          }).catch(err => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = origBtnText;
+            }
+            console.error('Unexpected Supabase update error:', err);
+            showToast(`Updated locally (Cloud sync failed)`, '⚠️');
+          });
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = origBtnText;
+          }
+          showToast(`Updated "${title}"`, '✏️');
+        }
+      } else {
+        // Add new project
+        const tempId = 'temp-' + Date.now();
+        const newProj = {
+          id: tempId,
+          title,
+          category,
+          categoryTag,
+          statusText,
+          statusType,
+          role,
+          bottleneck,
+          solution,
+          techStack,
+          actionUrl,
+          actionLabel,
+          metaNote,
+          isGithub: isGit
+        };
+
+        portfolioData.projects.unshift(newProj);
+        renderProjects();
+        saveStoredData(portfolioData);
+        closeProjectEditor();
+
+        if (supabaseClient) {
+          const payload = mapProjectToSupabase(newProj);
+          supabaseClient.from('projects').insert([payload]).select().then(({ data, error }) => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = origBtnText;
+            }
+            if (error) {
+              console.error('Supabase insert error:', error);
+              showToast(`Created locally (Cloud error: ${error.message})`, '⚠️');
+            } else if (data && data[0]) {
+              const mapped = mapSupabaseToProject(data[0]);
+              const i = portfolioData.projects.findIndex(p => String(p.id) === tempId);
+              if (i !== -1) portfolioData.projects[i] = mapped;
+              saveStoredData(portfolioData);
+              renderProjects();
+              showToast(`Created project "${title}" in Supabase cloud! 🚀`, '☁️');
+            } else {
+              showToast(`Created project "${title}" in Supabase cloud! 🚀`, '☁️');
+            }
+          }).catch(err => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = origBtnText;
+            }
+            console.error('Unexpected Supabase insert error:', err);
+            showToast(`Created locally (Cloud sync failed)`, '⚠️');
+          });
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = origBtnText;
+          }
+          showToast(`Created new project "${title}"`, '🚀');
+        }
+      }
     });
   }
 
   function deleteProject(projectId) {
-    const proj = portfolioData.projects.find(p => p.id === projectId);
+    const proj = portfolioData.projects.find(p => String(p.id) === String(projectId));
     const title = proj ? proj.title : 'this project';
-    if (confirm(`Are you sure you want to delete "${title}"?`)) {
-      portfolioData.projects = portfolioData.projects.filter(p => p.id !== projectId);
-      saveStoredData(portfolioData);
-      renderProjects();
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+
+    portfolioData.projects = portfolioData.projects.filter(p => String(p.id) !== String(projectId));
+    saveStoredData(portfolioData);
+    renderProjects();
+
+    if (supabaseClient) {
+      const numId = Number(projectId);
+      const delQuery = !isNaN(numId)
+        ? supabaseClient.from('projects').delete().eq('id', numId)
+        : supabaseClient.from('projects').delete().eq('title', title);
+
+      delQuery.then(({ error }) => {
+        if (error) {
+          console.error('Supabase delete error:', error);
+          showToast(`Deleted locally (Cloud error: ${error.message})`, '⚠️');
+        } else {
+          showToast(`Deleted "${title}" from Supabase cloud! 🗑️`, '☁️');
+        }
+      }).catch(err => {
+        console.error('Unexpected Supabase delete error:', err);
+        showToast(`Deleted locally (Cloud sync failed)`, '⚠️');
+      });
+    } else {
       showToast(`Deleted "${title}"`, '🗑️');
     }
   }
@@ -705,7 +1262,11 @@ document.addEventListener('DOMContentLoaded', () => {
     adminSaveBtn.addEventListener('click', () => {
       harvestContentElements(portfolioData);
       saveStoredData(portfolioData);
-      showToast('All on-page changes saved to localStorage!', '💾');
+      if (supabaseClient) {
+        showToast('All changes saved to Supabase cloud! ☁️', '💾');
+      } else {
+        showToast('All on-page changes saved to local cache!', '💾');
+      }
     });
   }
 
@@ -727,14 +1288,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (adminResetBtn) {
-    adminResetBtn.addEventListener('click', () => {
-      if (confirm('Reset all content and projects to initial defaults? Custom edits will be overwritten.')) {
-        localStorage.removeItem(STORAGE_KEY);
-        portfolioData = JSON.parse(JSON.stringify(defaultPortfolioData));
-        hydrateContentElements(portfolioData);
-        renderProjects();
-        showToast('Portfolio restored to initial defaults.', '🔄');
+    adminResetBtn.addEventListener('click', async () => {
+      if (!confirm('Reset all content and projects to initial defaults? Cloud changes will be overwritten.')) return;
+
+      if (supabaseClient) {
+        showToast('Resetting Supabase cloud database...', '🔄');
+        try {
+          await supabaseClient.from('projects').delete().neq('id', 0);
+          const seedRows = defaultPortfolioData.projects.map(mapProjectToSupabase);
+          const { data, error } = await supabaseClient.from('projects').insert(seedRows).select();
+          if (!error && data && data.length > 0) {
+            portfolioData.projects = data.map(mapSupabaseToProject);
+          } else {
+            portfolioData.projects = JSON.parse(JSON.stringify(defaultPortfolioData.projects));
+          }
+        } catch (err) {
+          console.error('Error resetting Supabase projects:', err);
+          portfolioData.projects = JSON.parse(JSON.stringify(defaultPortfolioData.projects));
+        }
+      } else {
+        portfolioData.projects = JSON.parse(JSON.stringify(defaultPortfolioData.projects));
       }
+
+      portfolioData.hero = JSON.parse(JSON.stringify(defaultPortfolioData.hero));
+      portfolioData.about = JSON.parse(JSON.stringify(defaultPortfolioData.about));
+      saveStoredData(portfolioData);
+      hydrateContentElements(portfolioData);
+      renderProjects();
+      showToast('Portfolio restored to initial defaults in Supabase! 🔄', '🔄');
     });
   }
 
@@ -841,10 +1422,17 @@ document.addEventListener('DOMContentLoaded', () => {
      9. Initial Hydration & State Setup
      ========================================================================== */
   hydrateContentElements(portfolioData);
-  renderProjects();
   if (isAdmin()) {
     setAdminMode(true);
   }
+
+  // Initialize Language Switcher Controls & Apply User Preference
+  initLanguageSwitcher();
+  setLanguage(currentLang);
+
+  // Load Projects from Supabase (with fallback seed data) & Subscribe to Realtime Updates
+  loadProjects();
+  subscribeToProjects();
 
   /* ==========================================================================
      10. Mobile Navigation Drawer
@@ -982,13 +1570,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (copyIcon && checkIcon && copyBtnText) {
           copyIcon.classList.add('hidden');
           checkIcon.classList.remove('hidden');
-          copyBtnText.textContent = 'Copied!';
+          copyBtnText.textContent = (currentLang === 'fr') ? 'Copié !' : 'Copied!';
           copyBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
           copyBtn.style.boxShadow = '0 4px 18px rgba(16, 185, 129, 0.4)';
         }
 
         if (copyFeedback) {
-          copyFeedback.textContent = '✓ Email copied to clipboard: ' + emailToCopy;
+          copyFeedback.textContent = (currentLang === 'fr')
+            ? '✓ Adresse e-mail copiée dans le presse-papiers : ' + emailToCopy
+            : '✓ Email copied to clipboard: ' + emailToCopy;
           copyFeedback.className = 'copy-feedback-msg success';
         }
 
@@ -997,7 +1587,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (copyIcon && checkIcon && copyBtnText) {
             copyIcon.classList.remove('hidden');
             checkIcon.classList.add('hidden');
-            copyBtnText.textContent = 'Copy Email';
+            copyBtnText.textContent = (currentLang === 'fr') ? "Copier l'Email" : 'Copy Email';
             copyBtn.style.background = '';
             copyBtn.style.boxShadow = '';
           }

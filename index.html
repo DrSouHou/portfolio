@@ -61,6 +61,23 @@
   }
   </script>
 
+  <!-- Theme Initialization (Anti-FOUC) -->
+  <script>
+    (function() {
+      try {
+        var stored = localStorage.getItem('portfolio_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = stored ? stored : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Internationalization (i18n) Dictionary (Loaded first to ensure synchronous availability) -->
   <script src="translations.js"></script>
   <!-- Supabase JS Client CDN & Main Application Script -->
@@ -140,6 +157,24 @@
           <button type="button" class="lang-btn" data-lang="fr" id="lang-btn-fr" aria-pressed="false" aria-label="Passer au français">FR</button>
         </div>
 
+        <!-- Dark Mode Toggle Button (Desktop) -->
+        <button type="button" class="theme-toggle" id="theme-toggle" role="switch" aria-checked="false" aria-label="Switch to dark theme" title="Switch to dark theme">
+          <span class="theme-toggle-track">
+            <span class="theme-icon-slot theme-slot-sun" aria-hidden="true">
+              <svg class="theme-svg theme-svg-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4.5"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+              </svg>
+            </span>
+            <span class="theme-icon-slot theme-slot-moon" aria-hidden="true">
+              <svg class="theme-svg theme-svg-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+            <span class="theme-thumb" aria-hidden="true"></span>
+          </span>
+        </button>
+
         <!-- Download CV Header Button -->
         <a href="assets/docs/Souhail_HAFIDI_CV.pdf" download="Souhail_HAFIDI_CV.pdf" class="btn btn-sm btn-outline nav-cta btn-cv" id="resume-nav-btn" target="_blank" rel="noopener noreferrer">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -164,10 +199,29 @@
       <div class="mobile-drawer-inner">
         <div class="mobile-drawer-header">
           <span class="logo-mark">SH<span class="dot">.</span></span>
-          <div class="lang-switcher mobile-lang-switcher" id="mobile-lang-switcher" role="group" aria-label="Language selector">
-            <button type="button" class="lang-btn active" data-lang="en" id="mobile-lang-btn-en" aria-pressed="true" aria-label="Switch to English">EN</button>
-            <span class="lang-divider" aria-hidden="true">/</span>
-            <button type="button" class="lang-btn" data-lang="fr" id="mobile-lang-btn-fr" aria-pressed="false" aria-label="Passer au français">FR</button>
+          <div class="mobile-controls-row">
+            <div class="lang-switcher mobile-lang-switcher" id="mobile-lang-switcher" role="group" aria-label="Language selector">
+              <button type="button" class="lang-btn active" data-lang="en" id="mobile-lang-btn-en" aria-pressed="true" aria-label="Switch to English">EN</button>
+              <span class="lang-divider" aria-hidden="true">/</span>
+              <button type="button" class="lang-btn" data-lang="fr" id="mobile-lang-btn-fr" aria-pressed="false" aria-label="Passer au français">FR</button>
+            </div>
+            <!-- Dark Mode Toggle (Mobile) -->
+            <button type="button" class="theme-toggle mobile-theme-toggle" id="mobile-theme-toggle" role="switch" aria-checked="false" aria-label="Switch to dark theme" title="Switch to dark theme">
+              <span class="theme-toggle-track">
+                <span class="theme-icon-slot theme-slot-sun" aria-hidden="true">
+                  <svg class="theme-svg theme-svg-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4.5"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                  </svg>
+                </span>
+                <span class="theme-icon-slot theme-slot-moon" aria-hidden="true">
+                  <svg class="theme-svg theme-svg-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                  </svg>
+                </span>
+                <span class="theme-thumb" aria-hidden="true"></span>
+              </span>
+            </button>
           </div>
           <button type="button" class="mobile-close-btn" id="mobile-close" aria-label="Close menu">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

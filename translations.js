@@ -24,6 +24,8 @@ window.PORTFOLIO_TRANSLATIONS = {
     "nav.mobileContact": "Contact",
     "nav.mobileDownloadCv": "Download CV (PDF)",
     "nav.drawerMeta": "📍 Suptech Santé • Morocco",
+    "theme.switchToDark": "Switch to dark theme",
+    "theme.switchToLight": "Switch to light theme",
 
     // Hero Section
     "hero.statusBadge": "📍 Morocco • Open to PFA Engineering Internships (Summer 2027)",
@@ -179,6 +181,8 @@ window.PORTFOLIO_TRANSLATIONS = {
     "nav.mobileContact": "Contact",
     "nav.mobileDownloadCv": "Télécharger CV (PDF)",
     "nav.drawerMeta": "📍 Suptech Santé • Maroc",
+    "theme.switchToDark": "Passer au thème sombre",
+    "theme.switchToLight": "Passer au thème clair",
 
     // Hero Section
     "hero.statusBadge": "📍 Maroc • Ouvert aux Stages PFA d'Ingénieur (Été 2027)",

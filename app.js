@@ -574,6 +574,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof renderProjects === 'function') {
       renderProjects(portfolioData.projects);
     }
+
+    // Update theme toggle buttons aria attributes and titles
+    if (typeof updateThemeToggleLabels === 'function') {
+      updateThemeToggleLabels(currentLang);
+    }
   }
 
   // Expose internationally for global script access / external links
@@ -601,6 +606,91 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  /* ==========================================================================
+     3.5 Theme Controller (Dark Mode / Light Mode Switcher)
+     ========================================================================== */
+  function getPreferredTheme() {
+    const stored = localStorage.getItem('portfolio_theme');
+    if (stored === 'dark' || stored === 'light') {
+      return stored;
+    }
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+
+  let currentTheme = getPreferredTheme();
+
+  function updateThemeToggleLabels(lang = currentLang) {
+    const isDark = currentTheme === 'dark';
+    const toggleButtons = document.querySelectorAll('.theme-toggle');
+    const titleText = isDark
+      ? (lang === 'fr' ? 'Passer au thème clair' : 'Switch to light theme')
+      : (lang === 'fr' ? 'Passer au thème sombre' : 'Switch to dark theme');
+
+    toggleButtons.forEach(btn => {
+      btn.setAttribute('aria-checked', isDark ? 'true' : 'false');
+      btn.setAttribute('title', titleText);
+      btn.setAttribute('aria-label', titleText);
+    });
+  }
+
+  function applyTheme(theme, animate = false) {
+    currentTheme = theme;
+    try {
+      localStorage.setItem('portfolio_theme', theme);
+    } catch (e) {}
+
+    if (animate) {
+      document.documentElement.classList.add('theme-transitioning');
+      window.clearTimeout(window.__themeTransitionTimeout);
+      window.__themeTransitionTimeout = setTimeout(() => {
+        document.documentElement.classList.remove('theme-transitioning');
+      }, 350);
+    }
+
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.classList.remove('dark');
+    }
+
+    updateThemeToggleLabels(currentLang);
+  }
+
+  function toggleTheme() {
+    const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+    applyTheme(newTheme, true);
+  }
+
+  function initThemeToggle() {
+    applyTheme(currentTheme, false);
+
+    const toggleButtons = document.querySelectorAll('.theme-toggle');
+    toggleButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleTheme();
+      });
+    });
+
+    try {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', (e) => {
+          if (!localStorage.getItem('portfolio_theme')) {
+            applyTheme(e.matches ? 'dark' : 'light', true);
+          }
+        });
+      }
+    } catch (err) {}
+  }
+
+  // Expose theme functions globally for accessibility / testing
+  window.toggleTheme = toggleTheme;
+  window.setTheme = applyTheme;
+  window.getCurrentTheme = () => currentTheme;
 
   /* ==========================================================================
      4. Dynamic Project Cards Rendering & Category Counts
@@ -1438,6 +1528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize Language Switcher Controls & Apply User Preference
   initLanguageSwitcher();
+  initThemeToggle();
   setLanguage(currentLang);
 
   // Load Projects from Supabase (with fallback seed data) & Subscribe to Realtime Updates
@@ -1645,12 +1736,12 @@ document.addEventListener('DOMContentLoaded', () => {
      15. Header Elevation on Scroll
      ========================================================================== */
   window.addEventListener('scroll', () => {
-    if (window.scrollY > 40) {
-      header.style.backgroundColor = 'rgba(255, 255, 255, 0.96)';
-      header.style.boxShadow = '0 4px 20px rgba(15, 23, 42, 0.08)';
-    } else {
-      header.style.backgroundColor = 'var(--bg-glass)';
-      header.style.boxShadow = 'none';
+    if (header) {
+      if (window.scrollY > 40) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
     }
   }, { passive: true });
 });
